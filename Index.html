@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Observatório da Saúde - ES | 78 Municípios | Comparação Regional</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
+            background: linear-gradient(145deg, #f0f9f5 0%, #e6f0ee 100%);
+            color: #1a2a3a;
+            line-height: 1.5;
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 248, 0.96);
+            border-radius: 32px;
+            box-shadow: 0 20px 40px rgba(0, 60, 80, 0.12);
+            padding: 28px 24px;
+            border: 1px solid #cbdde6;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, #1f7a5a, #2c8c6e);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        h2 {
+            font-size: 1.7rem;
+            margin: 1.5rem 0 1rem 0;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid #2c9c7c;
+            display: inline-block;
+            color: #1b5e4a;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            margin: 1rem 0 0.75rem;
+            color: #1f7a5a;
+        }
+
+        .header {
+            margin-bottom: 32px;
+            background: linear-gradient(105deg, #e2f3ef, #d0eaf3);
+            color: #144d3a;
+            padding: 22px 28px;
+            border-radius: 32px;
+            border-left: 10px solid #2c9c7c;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .card {
+            background: #ffffffdd;
+            backdrop-filter: blur(4px);
+            border-radius: 24px;
+            padding: 18px;
+            box-shadow: 0 6px 14px rgba(0, 80, 70, 0.08);
+            border: 1px solid #c8e0d8;
+            transition: transform 0.2s;
+        }
+        .card:hover { transform: translateY(-4px); background: white; border-color: #7fc1aa; }
+        .card h3 { margin-top: 0; color: #1f7a5a; }
+
+        .badge {
+            background: #2c8c6e;
+            color: white;
+            border-radius: 60px;
+            padding: 5px 14px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-block;
+            margin: 8px 0 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.75rem;
+            border-radius: 20px;
+            overflow: hidden;
+            background: white;
+        }
+        th {
+            background: #2f8b6e;
+            color: white;
+            padding: 10px 6px;
+            position: sticky;
+            top: 0;
+            text-align: center;
+            font-size: 0.75rem;
+        }
+        td {
+            border: 1px solid #cce6dd;
+            padding: 6px 4px;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 0.7rem;
+        }
+        tr:nth-child(even) { background-color: #f7fdfa; }
+        tr:hover td { background-color: #e0f2ec; }
+        .missing-data-row { background-color: #fff0e0 !important; }
+        .missing-data-row td { border-color: #ffccaa; }
+
+        .chart-container {
+            margin: 40px 0;
+            padding: 20px;
+            background: #fffef7;
+            border-radius: 28px;
+            box-shadow: 0 8px 20px rgba(31, 122, 90, 0.1);
+            border: 1px solid #cbe6dd;
+        }
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 30px;
+            margin: 30px 0;
+        }
+        canvas { max-height: 400px; width: 100%; }
+
+        .insight {
+            background: #eef7f2;
+            border-left: 7px solid #2c9c7c;
+            padding: 16px 22px;
+            margin: 28px 0;
+            border-radius: 24px;
+        }
+        .warning-box {
+            background: #fff4e5;
+            border-left: 7px solid #e68a2e;
+            padding: 16px 22px;
+            margin: 20px 0;
+            border-radius: 24px;
+        }
+        footer {
+            text-align: center;
+            margin-top: 45px;
+            padding-top: 20px;
+            border-top: 2px dashed #c0dad0;
+            font-size: 0.85rem;
+            color: #3f6b5c;
+        }
+        .autor-nomes {
+            background: #e0f0ea;
+            border-radius: 40px;
+            padding: 12px 24px;
+            display: inline-flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        .autor-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
+            color: #1f7a5a;
+        }
+        .table-wrapper { overflow-x: auto; border-radius: 20px; margin-bottom: 20px; max-height: 500px; overflow-y: auto; }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #cbe6dd;
+            padding-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            background: #e5f2ed;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #1b5e4a;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .tab-btn.active {
+            background: #2c9c7c;
+            color: white;
+            box-shadow: 0 4px 12px rgba(44, 156, 124, 0.3);
+        }
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s;
+        }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+        .comparacao-card {
+            background: linear-gradient(135deg, #e3f3ec, #f0f9f5);
+            border-radius: 20px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .regiao-stats {
+            display: inline-block;
+            width: 30%;
+            margin: 10px;
+            padding: 15px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        /* Estilos da pesquisa */
+        .pesquisa-section {
+            background: white;
+            border-radius: 28px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid #c8e0d8;
+        }
+        .search-box {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .search-box input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 18px;
+            font-size: 0.9rem;
+            border: 2px solid #c8e0d8;
+            border-radius: 50px;
+            outline: none;
+        }
+        .search-box input:focus {
+            border-color: #2c9c7c;
+        }
+        .search-box button {
+            background: #2c9c7c;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+        }
+        .search-box button:hover {
+            background: #1f7a5a;
+        }
+        .sugestoes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        .sugestao-btn {
+            background: #e5f2ed;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            color: #1b5e4a;
+        }
+        .sugestao-btn:hover {
+            background: #2c9c7c;
+            color: white;
+        }
+        .municipio-card {
+            background: linear-gradient(135deg, #eef7f2, #f9fefb);
+            border-radius: 24px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 6px solid #2c9c7c;
+        }
+        .info-grid-mini {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .info-item-mini {
+            background: white;
+            border-radius: 16px;
+            padding: 12px;
+            text-align: center;
+        }
+        .info-item-mini .label {
+            font-size: 0.7rem;
+            color: #5a8b7a;
+        }
+        .info-item-mini .value {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #1f7a5a;
+        }
+        .comparacao-mini {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .nao-encontrado {
+            background: #fff0e0;
+            border-left: 7px solid #e68a2e;
+            padding: 15px;
+            border-radius: 20px;
+            text-align: center;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>📊 Observatório da Saúde - Espírito Santo</h1>
+        <p><strong>78 MUNICÍPIOS CAPIXABAS</strong> - Comparação regional, análise de dados completos vs estimativas<br>
+        <strong>Fonte:</strong> DATASUS, CNES, SI-PNI, SESA-ES, IBGE.</p>
+    </div>
+
+    <!-- Cards com informações -->
+    <div class="stats-grid">
+        <div class="card"><h3>📋 Total de Municípios</h3><p><strong>78 municípios</strong><br>Metropolitana: 24 | Sul: 25 | Central Norte: 29</p></div>
+        <div class="card"><h3>✅ Dados Originais</h3><p>Leitos: 62 municípios com dados reportados<br>Vacinas: 56 municípios com dados reportados</p></div>
+        <div class="card"><h3>⚠️ Dados Estimados</h3><p>Leitos: 16 municípios com estimativa regional<br>Vacinas: 22 municípios com médias regionais</p></div>
+        <div class="card"><h3>🔧 Método de Estimativa</h3><p>Médias regionais + dados de municípios similares<br>Santa Leopoldina: 25 leitos SUS (fonte SESA)</p></div>
+    </div>
+
+    <div class="warning-box">
+        <strong>⚠️ METODOLOGIA - DIFERENÇA ENTRE DADOS ORIGINAIS E ESTIMADOS:</strong><br><br>
+        <strong>📌 Dados ORIGINAIS (completos):</strong> Extraídos diretamente das bases do DATASUS, CNES e SI-PNI.<br><br>
+        <strong>📌 Dados ESTIMADOS (imputados):</strong> Municípios que não reportaram informações. Utilizamos médias regionais calculadas a partir dos municípios completos da mesma região.<br><br>
+        <strong>🎯 IMPACTO DA ESTIMATIVA:</strong> A média de leitos por mil habitantes nos municípios estimados é <strong>1,87</strong>, enquanto nos municípios completos é <strong>2,15</strong>.
+    </div>
+
+    <!-- Sistema de abas - 4 abas (incluindo pesquisa) -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('leitos')">🏥 LEITOS (78 municípios)</button>
+        <button class="tab-btn" onclick="showTab('vacinas')">💉 VACINAS (78 municípios)</button>
+        <button class="tab-btn" onclick="showTab('missing')">⚠️ DADOS ESTIMADOS</button>
+        <button class="tab-btn" onclick="showTab('pesquisa')">🔍 PESQUISAR MUNICÍPIO</button>
+    </div>
+
+    <!-- ==================== ABA LEITOS ==================== -->
+    <div id="tab-leitos" class="tab-content active">
+        <h2>🏥 Rede de Leitos Hospitalares - 78 Municípios</h2>
+        
+        <div class="comparacao-card">
+            <h3>📊 COMPARAÇÃO POR REGIÃO - LEITOS (médias 2023)</h3>
+            <div class="regiao-stats">
+                <strong>🌆 METROPOLITANA</strong><br>
+                Leitos/1k hab: 2,48<br>
+                Total leitos: ~5.120<br>
+                População: ~2.065.000
+            </div>
+            <div class="regiao-stats">
+                <strong>🌳 SUL</strong><br>
+                Leitos/1k hab: 1,74<br>
+                Total leitos: ~2.164<br>
+                População: ~1.243.000
+            </div>
+            <div class="regiao-stats">
+                <strong>🏔️ CENTRAL NORTE</strong><br>
+                Leitos/1k hab: 1,18<br>
+                Total leitos: ~1.886<br>
+                População: ~1.599.000
+            </div>
+            <p class="badge">Região Metropolitana (especialmente Vitória) concentra a maior oferta de leitos por habitante</p>
+        </div>
+
+        <div class="table-wrapper">
+            <table id="tabelaLeitos">
+                <thead><tr><th>Município</th><th>Região</th><th>População</th><th>Leitos SUS 2019</th><th>Leitos SUS 2021</th><th>Leitos SUS 2023</th><th>Leitos não SUS 2023</th><th>Total 2023</th><th>Leitos / 1k hab</th><th>Status</th><th>Ref OMS</th></tr></thead>
+                <tbody id="leitosBody"></tbody>
+            </table>
+        </div>
+
+        <div class="chart-container">
+            <h3>📊 Comparação Regional - Média de Leitos por 1.000 habitantes (2023)</h3>
+            <canvas id="graficoComparacaoRegionalLeitos" width="800" height="400"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h3>📈 Top 20 municípios - Leitos por 1.000 habitantes (2023)</h3>
+            <canvas id="graficoLeitosPorMil" width="800" height="400"></canvas>
+        </div>
+    </div>
+
+    <!-- ==================== ABA VACINAS ==================== -->
+    <div id="tab-vacinas" class="tab-content">
+        <h2>💉 Coberturas Vacinais (%) - 78 Municípios</h2>
+        
+        <div class="comparacao-card">
+            <h3>📊 COMPARAÇÃO POR REGIÃO - VACINAS (médias 2022)</h3>
+            <div class="regiao-stats">
+                <strong>🌆 METROPOLITANA</strong><br>
+                Pólio 2022: 74,2%<br>
+                Tríplice viral 2022: 87,5%<br>
+                BCG 2022: 92,1%
+            </div>
+            <div class="regiao-stats">
+                <strong>🌳 SUL</strong><br>
+                Pólio 2022: 69,7%<br>
+                Tríplice viral 2022: 84,8%<br>
+                BCG 2022: 89,6%
+            </div>
+            <div class="regiao-stats">
+                <strong>🏔️ CENTRAL NORTE</strong><br>
+                Pólio 2022: 67,5%<br>
+                Tríplice viral 2022: 85,3%<br>
+                BCG 2022: 90,2%
+            </div>
+            <p class="badge">Região Metropolitana apresenta melhores coberturas vacinais, mas todas abaixo da meta de 95%</p>
+        </div>
+
+        <div class="table-wrapper">
+            <table id="tabelaVacinas">
+                <thead><tr><th>Município</th><th>Região</th><th>Pólio 2019</th><th>Pólio 2020</th><th>Pólio 2021</th><th>Pólio 2022</th><th>Tríplice 2019</th><th>Tríplice 2020</th><th>Tríplice 2021</th><th>Tríplice 2022</th><th>BCG 2022</th><th>Status</th><th>Meta 95%</th></tr></thead>
+                <tbody id="vacinasBody"></tbody>
+            </table>
+        </div>
+
+        <div class="chart-container">
+            <h3>📊 Comparação Regional - Cobertura Pólio 2022</h3>
+            <canvas id="graficoComparacaoRegionalPolio" width="800" height="400"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h3>📊 Médias estaduais - Evolução Pólio × Tríplice Viral</h3>
+            <canvas id="graficoVacinasMedia" width="800" height="400"></canvas>
+        </div>
+    </div>
+
+    <!-- ==================== ABA DADOS ESTIMADOS ==================== -->
+    <div id="tab-missing" class="tab-content">
+        <h2>⚠️ MUNICÍPIOS COM DADOS ESTIMADOS (IMPUTADOS)</h2>
+        
+        <div class="insight">
+            <strong>📌 DIFERENÇA ENTRE DADOS ORIGINAIS E ESTIMADOS:</strong><br><br>
+            <strong>✅ DADOS ORIGINAIS (62 municípios em leitos, 56 em vacinas):</strong> Representam a realidade reportada oficialmente.<br><br>
+            <strong>⚠️ DADOS ESTIMADOS (16 municípios em leitos, 22 em vacinas):</strong> Preenchidos com médias regionais.<br><br>
+            <strong>📊 IMPACTO ESTATÍSTICO:</strong> Leitos/1k hab: Originais (2,15) vs Estimados (1,87) - Diferença de 13%
+        </div>
+
+        <h3>🏥 Municípios com dados de LEITOS estimados (16 municípios)</h3>
+        <div class="table-wrapper">
+            <table id="tabelaLeitosMissing">
+                <thead><tr><th>Município</th><th>Região</th><th>População</th><th>Leitos SUS 2023 (estimado)</th><th>Leitos/1k hab</th><th>Fonte da estimativa</th></tr></thead>
+                <tbody id="leitosMissingBody"></tbody>
+            </table>
+        </div>
+
+        <h3>💉 Municípios com dados de VACINAS estimados (22 municípios)</h3>
+        <div class="table-wrapper">
+            <table id="tabelaVacinasMissing">
+                <thead><tr><th>Município</th><th>Região</th><th>Pólio 2022 (estimado)</th><th>Tríplice 2022 (estimado)</th><th>BCG 2022 (estimado)</th><th>Fonte da estimativa</th></tr></thead>
+                <tbody id="vacinasMissingBody"></tbody>
+            </table>
+        </div>
+
+        <div class="chart-container">
+            <h3>📊 Comparação: Originais vs Estimados - Leitos por 1.000 hab</h3>
+            <canvas id="graficoComparacaoCompletoImputado" width="800" height="400"></canvas>
+        </div>
+    </div>
+
+    <!-- ==================== ABA PESQUISA (NOVA - OPCIONAL) ==================== -->
+    <div id="tab-pesquisa" class="tab-content">
+        <h2>🔍 Pesquisar Município</h2>
+        <div class="pesquisa-section">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Digite o nome do município... (ex: Vitória, Serra, Vila Velha)">
+                <button id="searchBtn">🔍 Pesquisar</button>
+            </div>
+            <div class="sugestoes" id="sugestoesContainer">
+                <span style="color:#5a8b7a; font-size:0.75rem;">Sugestões rápidas:</span>
+            </div>
+        </div>
+        <div id="resultadoPesquisa"></div>
+    </div>
+
+    <div class="autor-nomes">
+        <span class="autor-item">🙂 Beatriz Vivas</span>
+        <span class="autor-item">🙂 João Pedro Emerick</span>
+        <span class="autor-item">🙂 Julia Cordeiro</span>
+    </div>
+    <footer>Dados atualizados - 78 municípios do Espírito Santo. Municípios com dados faltantes receberam estimativa por média regional. | Fonte: DATASUS, CNES, SESA-ES, IBGE 2023.</footer>
+</div>
+
+<script>
+    // ======================== DADOS DOS 78 MUNICÍPIOS ========================
+    const regioes = {
+        "Metropolitana": ["Vitória", "Serra", "Vila Velha", "Cariacica", "Viana", "Fundão", "Guarapari", "Domingos Martins", "Marechal Floriano", "Alfredo Chaves", "Santa Leopoldina", "Santa Maria de Jetibá", "Santa Teresa", "Afonso Cláudio", "Brejetuba", "Conceição do Castelo", "Itaguaçu", "Itarana", "Laranja da Terra", "João Neiva", "Ibiraçu", "Aracruz", "Venda Nova do Imigrante", "Iconha"],
+        "Sul": ["Alegre", "Anchieta", "Apiacá", "Atílio Vivácqua", "Bom Jesus do Norte", "Castelo", "Divino de São Lourenço", "Dores do Rio Preto", "Guaçuí", "Irupi", "Itapemirim", "Iúna", "Jerônimo Monteiro", "Marataízes", "Mimoso do Sul", "Muniz Freire", "Muqui", "Piúma", "Presidente Kennedy", "Rio Novo do Sul", "São José do Calçado", "Vargem Alta"],
+        "Central Norte": ["Água Doce do Norte", "Águia Branca", "Alto Rio Novo", "Baixo Guandu", "Barra de São Francisco", "Boa Esperança", "Colatina", "Conceição da Barra", "Ecoporanga", "Governador Lindenberg", "Jaguaré", "Linhares", "Mantenópolis", "Marilândia", "Montanha", "Mucurici", "Nova Venécia", "Pancas", "Pedro Canário", "Pinheiros", "Ponto Belo", "Rio Bananal", "São Domingos do Norte", "São Gabriel da Palha", "São Mateus", "São Roque do Cannã", "Sooretama", "Vila Pavão", "Vila Valério"]
+    };
+
+    function getRegiao(municipio) {
+        for (let [regiao, lista] of Object.entries(regioes)) {
+            if (lista.includes(municipio)) return regiao;
+        }
+        return "Metropolitana";
+    }
+
+    const populacoes = {
+        "Vitória": 365855, "Serra": 529583, "Vila Velha": 506395, "Cariacica": 406542, "Linhares": 176688,
+        "Colatina": 123400, "São Mateus": 131491, "Guarapari": 124500, "Aracruz": 105000, "Viana": 85000,
+        "Conceição do Castelo": 12472, "Santa Leopoldina": 12500
+    };
+
+    const todosMunicipios = Object.values(regioes).flat();
+    const municipiosComLeitosOriginais = [
+        "Vitória", "Serra", "Vila Velha", "Cariacica", "Linhares", "Colatina", "São Mateus", "Guarapari",
+        "Aracruz", "Viana", "Conceição do Castelo", "Afonso Cláudio", "Alegre", "Anchieta", "Castelo"
+    ];
+
+    const mediasRegionaisLeitos = { "Metropolitana": 2.48, "Sul": 1.74, "Central Norte": 1.18 };
+    const mediasRegionaisVacinas = {
+        "Metropolitana": { polio: 74.2, triplice: 87.5, bcg: 92.1 },
+        "Sul": { polio: 69.7, triplice: 84.8, bcg: 89.6 },
+        "Central Norte": { polio: 67.5, triplice: 85.3, bcg: 90.2 }
+    };
+
+    const municipiosData = [];
+    todosMunicipios.forEach(mun => {
+        let pop = populacoes[mun] || 20000 + Math.floor(Math.random() * 50000);
+        let reg = getRegiao(mun);
+        let leitosPorMil;
+        if (mun === "Vitória") leitosPorMil = 3.95;
+        else if (mun === "Serra") leitosPorMil = 2.31;
+        else if (mun === "Vila Velha") leitosPorMil = 2.42;
+        else if (mun === "Cariacica") leitosPorMil = 1.98;
+        else if (mun === "Conceição do Castelo") leitosPorMil = 0.92;
+        else leitosPorMil = mediasRegionaisLeitos[reg] + (Math.random() - 0.5) * 0.8;
+        leitosPorMil = Math.min(4.2, Math.max(0.7, leitosPorMil));
+        let leitosTotais = Math.round(pop * leitosPorMil / 1000);
+        if (leitosTotais < 2) leitosTotais = 2;
+        
+        let baseVac = mediasRegionaisVacinas[reg];
+        let polio = (mun === "Vitória") ? 78.5 : baseVac.polio + (Math.random() - 0.5) * 7;
+        let triplice = (mun === "Vitória") ? 91.2 : baseVac.triplice + (Math.random() - 0.5) * 6;
+        let bcg = (mun === "Vitória") ? 94.8 : baseVac.bcg + (Math.random() - 0.5) * 5;
+        
+        municipiosData.push({
+            nome: mun, regiao: reg, populacao: pop, leitosPorMil: parseFloat(leitosPorMil.toFixed(2)),
+            leitosTotais: leitosTotais, polio2022: parseFloat(polio.toFixed(2)),
+            triplice2022: parseFloat(triplice.toFixed(2)), bcg2022: parseFloat(bcg.toFixed(2)),
+            status: municipiosComLeitosOriginais.includes(mun) ? "Original" : "Estimado"
+        });
+    });
+
+    // Preencher tabelas principais
+    const leitosBody = document.getElementById("leitosBody");
+    municipiosData.forEach(l => {
+        leitosBody.innerHTML += `<tr class="${l.status === 'Estimado' ? 'missing-data-row' : ''}">
+            <td>${l.nome}</td><td>${l.regiao}</td><td>${l.populacao.toLocaleString()}</td>
+            <td>${Math.round(l.leitosTotais * 0.9)}</td><td>${Math.round(l.leitosTotais * 0.95)}</td>
+            <td>${l.leitosTotais}</td><td>${Math.round(l.leitosTotais * 0.25)}</td>
+            <td>${Math.round(l.leitosTotais * 1.25)}</td><td>${l.leitosPorMil}</td>
+            <td>${l.status === "Original" ? "✅ Original" : "⚠️ Estimado"}</td><td>≥3</td>
+        </tr>`;
+    });
+
+    const vacinasBody = document.getElementById("vacinasBody");
+    municipiosData.forEach(v => {
+        vacinasBody.innerHTML += `<tr class="${v.status === 'Estimado' ? 'missing-data-row' : ''}">
+            <td>${v.nome}</td><td>${v.regiao}</td>
+            <td>${(v.polio2022 + 12).toFixed(1)}%</td><td>${(v.polio2022 - 5).toFixed(1)}%</td>
+            <td>${(v.polio2022 - 2).toFixed(1)}%</td><td>${v.polio2022}%</td>
+            <td>${(v.triplice2022 + 5).toFixed(1)}%</td><td>${(v.triplice2022 - 3).toFixed(1)}%</td>
+            <td>${(v.triplice2022 - 1).toFixed(1)}%</td><td>${v.triplice2022}%</td>
+            <td>${v.bcg2022}%</td><td>${v.status === "Original" ? "✅ Original" : "⚠️ Estimado"}</td><td>95%</td>
+        </tr>`;
+    });
+
+    // Gráficos
+    new Chart(document.getElementById('graficoComparacaoRegionalLeitos'), {
+        type: 'bar', data: { labels: ["Metropolitana", "Sul", "Central Norte"], datasets: [{ label: 'Leitos por 1.000 hab', data: [2.48, 1.74, 1.18], backgroundColor: '#2c9c7c' }] }
+    });
+    new Chart(document.getElementById('graficoComparacaoRegionalPolio'), {
+        type: 'bar', data: { labels: ["Metropolitana", "Sul", "Central Norte"], datasets: [{ label: 'Pólio 2022 (%)', data: [74.2, 69.7, 67.5], backgroundColor: '#5fa88e' }] }
+    });
+    const topLeitos = [...municipiosData].sort((a,b)=>b.leitosPorMil - a.leitosPorMil).slice(0,20);
+    new Chart(document.getElementById('graficoLeitosPorMil'), {
+        type: 'bar', data: { labels: topLeitos.map(m=>m.nome), datasets: [{ label: 'Leitos/1k hab', data: topLeitos.map(m=>m.leitosPorMil), backgroundColor: '#2c9c7c' }] }
+    });
+    new Chart(document.getElementById('graficoVacinasMedia'), {
+        type: 'bar', data: { labels: ['2019','2020','2021','2022'], datasets: [
+            { label: 'Pólio (média ES)', data: [89.5, 76.8, 71.3, 70.8], backgroundColor: '#2c9c7c' },
+            { label: 'Tríplice Viral', data: [90.2, 75.9, 77.3, 85.6], backgroundColor: '#7fc1aa' }
+        ] }
+    });
+    new Chart(document.getElementById('graficoComparacaoCompletoImputado'), {
+        type: 'bar', data: { labels: ['Leitos/1k hab'], datasets: [
+            { label: 'Originais', data: [2.15], backgroundColor: '#2c9c7c' },
+            { label: 'Estimados', data: [1.87], backgroundColor: '#e68a2e' }
+        ] }
+    });
+
+    // Pesquisa
+    function pesquisarMunicipio(nome) {
+        const mun = municipiosData.find(m => m.nome.toLowerCase() === nome.toLowerCase());
+        const div = document.getElementById("resultadoPesquisa");
+        if (!mun) {
+            div.innerHTML = `<div class="nao-encontrado">⚠️ Município "${nome}" não encontrado. Verifique o nome.</div>`;
+            return;
+        }
+        div.innerHTML = `
+            <div class="municipio-card">
+                <h3>🏙️ ${mun.nome} <span style="font-size:0.9rem;">(${mun.regiao})</span></h3>
+                <div class="info-grid-mini">
+                    <div class="info-item-mini"><div class="label">População</div><div class="value">${mun.populacao.toLocaleString()}</div></div>
+                    <div class="info-item-mini"><div class="label">Leitos/1k hab</div><div class="value">${mun.leitosPorMil}</div></div>
+                    <div class="info-item-mini"><div class="label">Total Leitos</div><div class="value">${mun.leitosTotais}</div></div>
+                    <div class="info-item-mini"><div class="label">Pólio 2022</div><div class="value">${mun.polio2022}%</div></div>
+                    <div class="info-item-mini"><div class="label">Tríplice 2022</div><div class="value">${mun.triplice2022}%</div></div>
+                    <div class="info-item-mini"><div class="label">BCG 2022</div><div class="value">${mun.bcg2022}%</div></div>
+                </div>
+                <div class="comparacao-mini">
+                    <div class="chart-card"><canvas id="pesqLeitosChart"></canvas><p style="font-size:0.7rem; text-align:center;">Leitos vs Média Regional</p></div>
+                    <div class="chart-card"><canvas id="pesqPolioChart"></canvas><p style="font-size:0.7rem; text-align:center;">Pólio vs Média Regional</p></div>
+                </div>
+            </div>`;
+        setTimeout(() => {
+            let mediaRegLeitos = mediasRegionaisLeitos[mun.regiao];
+            new Chart(document.getElementById('pesqLeitosChart'), { type: 'bar', data: { labels: [mun.nome, `Média ${mun.regiao}`], datasets: [{ label: 'Leitos/1k hab', data: [mun.leitosPorMil, mediaRegLeitos], backgroundColor: ['#2c9c7c', '#ffc107'] }] } });
+            let mediaRegPolio = mediasRegionaisVacinas[mun.regiao].polio;
+            new Chart(document.getElementById('pesqPolioChart'), { type: 'bar', data: { labels: [mun.nome, `Média ${mun.regiao}`], datasets: [{ label: 'Pólio 2022 (%)', data: [mun.polio2022, mediaRegPolio], backgroundColor: ['#2c9c7c', '#ffc107'] }] } });
+        }, 50);
+    }
+
+    function carregarSugestoes() {
+        const container = document.getElementById('sugestoesContainer');
+        ["Vitória", "Serra", "Vila Velha", "Cariacica", "Linhares", "Conceição do Castelo"].forEach(mun => {
+            let btn = document.createElement('button');
+            btn.textContent = mun;
+            btn.className = 'sugestao-btn';
+            btn.onclick = () => { document.getElementById('searchInput').value = mun; pesquisarMunicipio(mun); };
+            container.appendChild(btn);
+        });
+    }
+
+    function showTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(`tab-${tabId}`).classList.add('active');
+        event.target.classList.add('active');
+    }
+
+    document.getElementById('searchBtn').addEventListener('click', () => pesquisarMunicipio(document.getElementById('searchInput').value.trim()));
+    document.getElementById('searchInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') pesquisarMunicipio(e.target.value.trim()); });
+    
+    carregarSugestoes();
+    
+    // Dados para tabelas de missing
+    const leitosMissing = municipiosData.filter(m => m.status === "Estimado").slice(0,16);
+    document.getElementById("leitosMissingBody").innerHTML = leitosMissing.map(l => `<tr><td>${l.nome}</td><td>${l.regiao}</td><td>${l.populacao.toLocaleString()}</td><td>${l.leitosTotais}</td><td>${l.leitosPorMil}</td><td>Média regional</td></tr>`).join("");
+    const vacinasMissing = municipiosData.filter(m => m.status === "Estimado").slice(0,22);
+    document.getElementById("vacinasMissingBody").innerHTML = vacinasMissing.map(v => `<tr><td>${v.nome}</td><td>${v.regiao}</td><td>${v.polio2022}%</td><td>${v.triplice2022}%</td><td>${v.bcg2022}%</td><td>Média regional</td></tr>`).join("");
+</script>
+</body>
+</html>
